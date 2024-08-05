@@ -1,0 +1,29 @@
+services:
+  glance:
+    image: ghcr.io/dvdandroid/glance:2024-08-05-5da1768
+    container_name: glance
+    restart: unless-stopped
+    volumes:
+      - ./glance/glance.yml:/app/glance.yml
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - ....
+      - glance-network
+
+  glance-docker-container-ext:
+    image: ghcr.io/dvdandroid/glance-docker-container-ext
+    container_name: glance-docker-container-ext
+    restart: unless-stopped
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - glance-network
+
+networks:
+  glance-network:
+    name: glance-network
+    driver_opts:
+      com.docker.network.bridge.name: br-glance
