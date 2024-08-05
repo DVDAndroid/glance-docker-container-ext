@@ -1,7 +1,7 @@
 glance-docker-container-ext
 ===
 
-[Glance](https://github.com/glanceapp/glance) extension that creates a widget that displays the Docker containers running.
+[Glance](https://github.com/glanceapp/glance) extension that creates a widget that displays the running Docker containers.
 
 ![Sample Screenshot](./assets/screen.png)
 
