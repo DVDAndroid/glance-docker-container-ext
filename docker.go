@@ -35,17 +35,17 @@ func LoadContainers(dockerClient *docker.Client, p params) ([]DockerContainer, e
 		description := ""
 		url := ""
 		icon := ""
+		group := ""
 		sameTab := false
 
 		for label, value := range container.Labels {
-			if value == "" {
-				continue
-			}
 			switch label {
 			case "glance.name":
 				name = value
 			case "glance.description":
 				description = value
+			case "glance.group":
+				group = value
 			case "glance.icon":
 				icon = value
 				if strings.HasPrefix(value, "si:") {
@@ -57,6 +57,10 @@ func LoadContainers(dockerClient *docker.Client, p params) ([]DockerContainer, e
 			case "glance.same-tab":
 				sameTab = value == "true"
 			}
+		}
+
+		if group != p.Group {
+			continue
 		}
 
 		state := container.State
@@ -73,6 +77,14 @@ func LoadContainers(dockerClient *docker.Client, p params) ([]DockerContainer, e
 			IsSvgIcon:   strings.Contains(icon, "/simple-icons/") || strings.HasSuffix(icon, ".svg"),
 			URL:         url,
 			SameTab:     p.SameTab || sameTab,
+		}
+	}
+
+	for i := 0; i < len(containers); i++ {
+		// happens if container group is different than the requested group
+		if containers[i].Name == "" {
+			containers = append(containers[:i], containers[i+1:]...)
+			i--
 		}
 	}
 

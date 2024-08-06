@@ -11,6 +11,7 @@ import (
 
 type params struct {
 	WidgetTitle   string `schema:"title,default:Docker Containers"`
+	Group         string `schema:"group"`
 	AllContainers bool   `schema:"all,default:true"`
 	Order         string `schema:"order,default:name"`
 	SameTab       bool   `schema:"same-tab,default:false"`
