@@ -41,6 +41,7 @@ then in your `glance.yml` config file, add the following:
 | `title`         | Title of the widget                                                                                                      | "Docker Containers" |
 | `all`           | Show all containers or only running ones                                                                                 | `true`              |
 | `order`         | Order of the containers, comma separated **string** of `name`, `status`<br>(`name`,`status`,`name,status`,`status,name`) | `name`              |
+| `group`         | Identifier for the group of containers. If set, only containers with the same group will be displayed.                   |                     |
 | `same-tab`      | Open the URL in the same tab. Value customizable per container                                                           | `false`             |
 | `ignore-status` | Status of the containers will not be displayed                                                                           | `false`             |
 
@@ -53,6 +54,7 @@ Then, for every container you want to monitor, add the following labels:
       glance.enable: true
       glance.name: Sonarr
       glance.description: TV show search
+      glance.group: media
       glance.url: http://sonarr.lan
       glance.icon: ./assets/imgs/television-classic.svg
 ```
@@ -62,6 +64,7 @@ Then, for every container you want to monitor, add the following labels:
 | `glance.enable`      | Enable monitoring for this container                              |                |
 | `glance.name`        | Name of the container                                             | container name |
 | `glance.description` | Description of the container                                      |                |
+| `glance.group`       | Identifier for the group of containers                            |                |
 | `glance.url`         | URL to open when clicking on the container                        |                |
 | `glance.icon`        | Icon to display, pointing to assets or Simple Icon (`si:` prefix) |                |
 | `glance.same-tab`    | Open the URL in the same tab                                      | `false`        |
