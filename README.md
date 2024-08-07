@@ -11,7 +11,7 @@ Assuming you are using Docker compose, add the following to your `docker-compose
 
 ```yaml
   glance-docker-container-ext:
-    image: ghcr.io/dvdandroid/glance-docker-container-ext
+    image: dvdandroid/glance-docker-container-ext
     container_name: glance-docker-container-ext
     restart: unless-stopped
     environment:
