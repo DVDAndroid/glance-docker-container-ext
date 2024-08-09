@@ -1,6 +1,10 @@
 glance-docker-container-ext
 ===
 
+![Docker Image Size](https://img.shields.io/docker/image-size/dvdandroid/glance-docker-container-ext)
+![Docker Image Version](https://img.shields.io/docker/v/dvdandroid/glance-docker-container-ext)
+
+
 [Glance](https://github.com/glanceapp/glance) extension that creates a widget that displays the running Docker containers.
 
 ![Sample Screenshot](./assets/screen.png)
@@ -11,7 +15,7 @@ Assuming you are using Docker compose, add the following to your `docker-compose
 
 ```yaml
   glance-docker-container-ext:
-    image: ghcr.io/dvdandroid/glance-docker-container-ext
+    image: dvdandroid/glance-docker-container-ext
     container_name: glance-docker-container-ext
     restart: unless-stopped
     environment:
