@@ -26,15 +26,6 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Build app
-        run: |
-          # just to check if it builds correctly
-          GITHUB_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          GOOS=linux
-          GOARCH=amd64
-          CGO_ENABLED=0
-          go build --trimpath -o .
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -57,25 +48,29 @@ jobs:
           # make IMAGE_NAME lowercase
           IMAGE_NAME=$(echo ${{ env.IMAGE_NAME }} | tr '[:upper:]' '[:lower:]')
           
-          major=$(echo $VERSION | cut -d. -f1)
-          minor=$(echo $VERSION | cut -d. -f2)
+          if [[ ${{ github.event.release.prerelease }} == "false" ]]; then
+            major=$(echo $VERSION | cut -d. -f1)
+            minor=$(echo $VERSION | cut -d. -f2)
           
-          tag_major="$major"
-          tag_minor="$major.$minor"
+            tag_major="$major"
+            tag_minor="$major.$minor"
           
-          docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${tag_major}
-          docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${tag_minor}
+            docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${tag_major}
+            docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${tag_minor}
+            docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:latest
+          
+            docker tag img ${IMAGE_NAME}:${tag_major}
+            docker tag img ${IMAGE_NAME}:${tag_minor}
+            docker tag img ${IMAGE_NAME}:latest
+          fi
+          
           docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${VERSION}
           docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${IMAGE_TAG}
           docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:${GITHUB_SHA}
-          docker tag img ${{ env.REGISTRY }}/${IMAGE_NAME}:latest
 
-          docker tag img ${IMAGE_NAME}:${tag_major}
-          docker tag img ${IMAGE_NAME}:${tag_minor}
           docker tag img ${IMAGE_NAME}:${VERSION}
           docker tag img ${IMAGE_NAME}:${IMAGE_TAG}
           docker tag img ${IMAGE_NAME}:${GITHUB_SHA}
-          docker tag img ${IMAGE_NAME}:latest
 
       - name: Push Docker image
         run: |
