@@ -3,6 +3,7 @@ package main
 import (
 	docker "github.com/fsouza/go-dockerclient"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -17,74 +18,104 @@ type DockerContainer struct {
 	SameTab     bool
 }
 
+type GlanceLabel struct {
+	Name        string
+	Description string
+	Url         string
+	Icon        string
+	Group       string
+	SameTab     bool
+}
+
 func LoadContainers(dockerClient *docker.Client, p params) ([]DockerContainer, error) {
 	containerList, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: p.AllContainers,
-		Filters: map[string][]string{
-			"label": {"glance.enable=true"},
-		},
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	containers := make([]DockerContainer, len(containerList))
-	for i, container := range containerList {
-		name := container.Names[0][1:]
-		description := ""
-		url := ""
-		icon := ""
-		group := ""
-		sameTab := false
+	var containers []DockerContainer
+	for _, container := range containerList {
+		glanceLabels := make(map[int]GlanceLabel)
+		isGlanceEnabled := false
 
 		for label, value := range container.Labels {
-			switch label {
-			case "glance.name":
-				name = value
-			case "glance.description":
-				description = value
-			case "glance.group":
-				group = value
-			case "glance.icon":
-				icon = value
-				if strings.HasPrefix(value, "si:") {
-					icon = strings.TrimPrefix(value, "si:")
-					icon = "https://cdnjs.cloudflare.com/ajax/libs/simple-icons/11.14.0/" + icon + ".svg"
+			if strings.HasPrefix(label, "glance.") && strings.HasSuffix(label, ".enable") && value == "true" {
+				parts := strings.Split(label, ".")
+				if len(parts) < 3 {
+					continue
 				}
-			case "glance.url":
-				url = value
-			case "glance.same-tab":
-				sameTab = value == "true"
+
+				index, err := strconv.Atoi(parts[1])
+				if err != nil {
+					continue
+				}
+
+				isGlanceEnabled = true
+
+				if _, exists := glanceLabels[index]; !exists {
+					glanceLabels[index] = GlanceLabel{}
+				}
+			}
+
+			parts := strings.Split(label, ".")
+			if strings.HasPrefix(label, "glance.") && len(parts) == 3 {
+				index, err := strconv.Atoi(parts[1])
+				if err != nil {
+					continue
+				}
+
+				gl := glanceLabels[index]
+				switch parts[2] {
+				case "name":
+					gl.Name = value
+				case "description":
+					gl.Description = value
+				case "group":
+					gl.Group = value
+				case "icon":
+					gl.Icon = value
+					if strings.HasPrefix(value, "si:") {
+						gl.Icon = strings.TrimPrefix(value, "si:")
+						gl.Icon = "https://cdnjs.cloudflare.com/ajax/libs/simple-icons/11.14.0/" + gl.Icon + ".svg"
+					}
+				case "url":
+					gl.Url = value
+				case "same-tab":
+					gl.SameTab = value == "true"
+				}
+				glanceLabels[index] = gl
 			}
 		}
 
-		if group != p.Group {
-			continue
-		}
+		if isGlanceEnabled {
+			for _, gl := range glanceLabels {
+				if gl.Group != p.Group {
+					continue
+				}
 
-		state := container.State
-		if p.IgnoreStatus {
-			state = ""
-		}
+				state := container.State
+				if p.IgnoreStatus {
+					state = ""
+				}
 
-		containers[i] = DockerContainer{
-			Name:        name,
-			Description: description,
-			State:       state,
-			Status:      container.Status,
-			Icon:        icon,
-			IsSvgIcon:   strings.Contains(icon, "/simple-icons/") || strings.HasSuffix(icon, ".svg"),
-			URL:         url,
-			SameTab:     p.SameTab || sameTab,
-		}
-	}
+				if gl.Name == "" {
+					gl.Name = container.Names[0][1:]
+				}
 
-	for i := 0; i < len(containers); i++ {
-		// happens if container group is different than the requested group
-		if containers[i].Name == "" {
-			containers = append(containers[:i], containers[i+1:]...)
-			i--
+				containers = append(containers, DockerContainer{
+					Name:        gl.Name,
+					Status:      container.Status,
+					State:       state,
+					Description: gl.Description,
+					Icon:        gl.Icon,
+					IsSvgIcon:   strings.Contains(gl.Icon, "/simple-icons/") || strings.HasSuffix(gl.Icon, ".svg"),
+					URL:         gl.Url,
+					SameTab:     p.SameTab || gl.SameTab,
+				})
+			}
 		}
 	}
 
