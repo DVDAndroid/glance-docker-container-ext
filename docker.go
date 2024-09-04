@@ -19,6 +19,7 @@ type DockerContainer struct {
 }
 
 type GlanceLabel struct {
+	Enable      bool
 	Name        string
 	Description string
 	Url         string
@@ -39,83 +40,77 @@ func LoadContainers(dockerClient *docker.Client, p params) ([]DockerContainer, e
 	var containers []DockerContainer
 	for _, container := range containerList {
 		glanceLabels := make(map[int]GlanceLabel)
-		isGlanceEnabled := false
 
 		for label, value := range container.Labels {
-			if strings.HasPrefix(label, "glance.") && strings.HasSuffix(label, ".enable") && value == "true" {
-				parts := strings.Split(label, ".")
-				if len(parts) < 3 {
-					continue
-				}
-
-				index, err := strconv.Atoi(parts[1])
-				if err != nil {
-					continue
-				}
-
-				isGlanceEnabled = true
-
-				if _, exists := glanceLabels[index]; !exists {
-					glanceLabels[index] = GlanceLabel{}
-				}
+			if !strings.HasPrefix(label, "glance.") {
+				continue
 			}
 
 			parts := strings.Split(label, ".")
-			if strings.HasPrefix(label, "glance.") && len(parts) == 3 {
-				index, err := strconv.Atoi(parts[1])
-				if err != nil {
-					continue
-				}
-
-				gl := glanceLabels[index]
-				switch parts[2] {
-				case "name":
-					gl.Name = value
-				case "description":
-					gl.Description = value
-				case "group":
-					gl.Group = value
-				case "icon":
-					gl.Icon = value
-					if strings.HasPrefix(value, "si:") {
-						gl.Icon = strings.TrimPrefix(value, "si:")
-						gl.Icon = "https://cdnjs.cloudflare.com/ajax/libs/simple-icons/11.14.0/" + gl.Icon + ".svg"
-					}
-				case "url":
-					gl.Url = value
-				case "same-tab":
-					gl.SameTab = value == "true"
-				}
-				glanceLabels[index] = gl
+			if len(parts) != 3 {
+				continue
 			}
+
+			index, err := strconv.Atoi(parts[1])
+			if err != nil {
+				continue
+			}
+
+			gl, exists := glanceLabels[index]
+			if !exists {
+				glanceLabels[index] = GlanceLabel{}
+				gl = glanceLabels[index]
+			}
+			switch parts[2] {
+			case "enable":
+				gl.Enable = value == "true"
+			case "name":
+				gl.Name = value
+			case "description":
+				gl.Description = value
+			case "group":
+				gl.Group = value
+			case "icon":
+				gl.Icon = value
+				if strings.HasPrefix(value, "si:") {
+					gl.Icon = strings.TrimPrefix(value, "si:")
+					gl.Icon = "https://cdnjs.cloudflare.com/ajax/libs/simple-icons/11.14.0/" + gl.Icon + ".svg"
+				}
+			case "url":
+				gl.Url = value
+			case "same-tab":
+				gl.SameTab = value == "true"
+			}
+			glanceLabels[index] = gl
 		}
 
-		if isGlanceEnabled {
-			for _, gl := range glanceLabels {
-				if gl.Group != p.Group {
-					continue
-				}
-
-				state := container.State
-				if p.IgnoreStatus {
-					state = ""
-				}
-
-				if gl.Name == "" {
-					gl.Name = container.Names[0][1:]
-				}
-
-				containers = append(containers, DockerContainer{
-					Name:        gl.Name,
-					Status:      container.Status,
-					State:       state,
-					Description: gl.Description,
-					Icon:        gl.Icon,
-					IsSvgIcon:   strings.Contains(gl.Icon, "/simple-icons/") || strings.HasSuffix(gl.Icon, ".svg"),
-					URL:         gl.Url,
-					SameTab:     p.SameTab || gl.SameTab,
-				})
+		for _, gl := range glanceLabels {
+			if !gl.Enable {
+				continue
 			}
+			if gl.Group != p.Group {
+				continue
+			}
+
+			state := container.State
+			if p.IgnoreStatus {
+				state = ""
+			}
+
+			if gl.Name == "" {
+				gl.Name = container.Names[0][1:]
+			}
+
+			containers = append(containers, DockerContainer{
+				Name:        gl.Name,
+				Status:      container.Status,
+				State:       state,
+				Description: gl.Description,
+				Icon:        gl.Icon,
+				IsSvgIcon:   strings.Contains(gl.Icon, "/simple-icons/") || strings.HasSuffix(gl.Icon, ".svg"),
+				URL:         gl.Url,
+				SameTab:     p.SameTab || gl.SameTab,
+			})
 		}
 	}
 
