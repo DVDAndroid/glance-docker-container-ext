@@ -2,6 +2,7 @@ package main
 
 import (
 	docker "github.com/fsouza/go-dockerclient"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -48,6 +49,9 @@ func LoadContainers(dockerClient *docker.Client, p params) ([]DockerContainer, e
 
 			parts := strings.Split(label, ".")
 			if len(parts) != 3 {
+				if len(parts) == 2 {
+					slog.Warn("found deprecated label. use new format instead glance.<number>."+parts[1], "label", label, "container", container.Names[0][1:])
+				}
 				continue
 			}
 
