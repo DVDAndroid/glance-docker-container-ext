@@ -22,6 +22,12 @@ glance-docker-container-ext:
     - PORT=8081 # Optional, default is 8081
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
+# labels:
+#   glance.0.enable: true
+#   glance.0.name: Glance
+#   glance.0.description: Self-hosted dashboard that puts all your feeds in one place
+#   glance.0.url: https://glance.example.com/
+#   glance.0.icon: https://avatars.githubusercontent.com/u/159397742?s=48&v=4
 ```
 
 then in your `glance.yml` config file, add the following:
@@ -48,18 +54,17 @@ then in your `glance.yml` config file, add the following:
 | `same-tab`      | Open the URL in the same tab. Value customizable per container                                                           | `false`             |
 | `ignore-status` | Status of the containers will not be displayed                                                                           | `false`             |
 
-## Configuration
+## Configuration (required)
 
 Then, for every container you want to monitor, add the following labels to its compose file:
 
 ```yaml
 labels:
   glance.0.enable: true
-  glance.0.name: Sonarr
-  glance.0.description: TV show search
-  glance.0.group: media
-  glance.0.url: http://sonarr.lan
-  glance.0.icon: ./assets/imgs/television-classic.svg
+  glance.0.name: Glance
+  glance.0.description: A self-hosted dashboard that puts all your feeds in one place
+  glance.0.url: https://glance.example.com
+  glance.0.icon: https://avatars.githubusercontent.com/u/159397742?s=48&v=4
 ```
 
 :warning: Multiple labels can be added to the same container. Read below
