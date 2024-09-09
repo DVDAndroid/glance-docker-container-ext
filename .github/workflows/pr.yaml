@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    paths:
+      - '*go*'
+      - 'Dockerfile'
+  pull_request:
+    paths:
+      - '*go*'
+      - 'Dockerfile'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Build Docker image
+        run: |
+          docker build -f Dockerfile .
